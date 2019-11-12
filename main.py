@@ -6,10 +6,12 @@ import tweepy # https://tweepy.readthedocs.io/en/latest/index.html
 import pprint
 from googlesearch import search # https://github.com/MarioVilas/googlesearch
 import pandas as pd
+import networkx # https://networkx.github.io/documentation/stable/install.html
 
 # Custom scripts
 import utils
 
+# Open credentials.json and load the information to create the tweepy API object for queries
 with open('credentials.json') as credentials_file:
   credentials = json.load(credentials_file)
 
@@ -51,6 +53,7 @@ def get_users_in_lists(list_urls):
     # Parsing json data and appending to appropriate lists instantiated above
     for user_id in list_members_output:
       users_dictionary[user_id._json['id']] = {
+        'id': user_id._json['id'],
         'description': user_id._json['description'],
         'handle': user_id._json['screen_name'],
         'followers': utils.get_ids_by_type("followers", user_id._json['screen_name']),
@@ -58,6 +61,11 @@ def get_users_in_lists(list_urls):
       } 
 
     pprint.pprint(users_dictionary)
+
+def users_to_graph():
+
+  # From a CSV file with each node representing a edge on a graph, create a network graph that represents the relations dictated by the CSV file.
+
 
 if __name__ == '__main__':
   x = main()

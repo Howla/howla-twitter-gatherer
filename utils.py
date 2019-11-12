@@ -1,9 +1,12 @@
 # System libraries
 import json
 import time
+import csv
+
 # Third party libraries (pip)
 import tweepy
 
+# Open credentials.json and load the information to create the tweepy API object for queries
 with open('credentials.json') as credentials_file:
   credentials = json.load(credentials_file)
 
@@ -28,5 +31,18 @@ def get_ids_by_type(id_type, screen_name="ohitsdoh"):
 
   return ids
 
+def to_csv(user_info_dict, file_name):
 
-  
+  with open(file_name + '.csv', 'a', newline='') as csvfile:
+    fieldnames = ['follower_id', 'followee_id']
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer.writeheader()
+
+    # Add rows representing each follower of this account
+    for follower_user_id in user_info_dict['followers']:
+      # follower_user_id is a integer in a list
+      writer.writerow({'follower_id': follower_user_id, 'followee_id': user_info_dict['id']})
+
+    for friend_user_id in user_info_dict['friends']:
+      # friend_user_id is a integer in a list
+      writer.writerow({'follower_id': user_info_dict['id'], 'followee_id': friend_user_id})
