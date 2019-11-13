@@ -10,6 +10,7 @@ import networkx # https://networkx.github.io/documentation/stable/install.html
 
 # Custom scripts
 import utils
+import classes
 
 # Open credentials.json and load the information to create the tweepy API object for queries
 with open('credentials.json') as credentials_file:
@@ -40,7 +41,7 @@ def main():
 
 def get_users_in_lists(list_urls):
 
-  for tw_list in list_urls:
+  for tw_list in list_urls[:1]:
     
     tw_list = tw_list[tw_list.find('.com') + 4:]
     user = tw_list.split('/')[1]
@@ -48,24 +49,28 @@ def get_users_in_lists(list_urls):
 
     # Using Tweepy api, getting json of all users in list
     list_members_output = api.list_members(user, list_name)[:1]
+    pprint.pprint(list_members_output)
 
     users_dictionary = {}
     # Parsing json data and appending to appropriate lists instantiated above
     for user_id in list_members_output:
-      users_dictionary[user_id._json['id']] = {
-        'id': user_id._json['id'],
-        'description': user_id._json['description'],
-        'handle': user_id._json['screen_name'],
-        'followers': utils.get_ids_by_type("followers", user_id._json['screen_name']),
-        'friends': utils.get_ids_by_type("friends", user_id._json['screen_name'])
-      } 
+      users_dictionary[user_id._json['id']] = classes.UserInfo(
+        id = user_id._json['id'],
+        description = user_id._json['description'],
+        handle = user_id._json['screen_name'],
+        followers = utils.get_ids_by_type("followers", user_id._json['screen_name']),
+        friends = utils.get_ids_by_type("friends", user_id._json['screen_name'])
+      )
 
-    pprint.pprint(users_dictionary)
+    # for k,v in users_dictionary.items():
+    #   print(k, v)
+    for id, data in users_dictionary.items():
+      utils.to_csv(data, 'OUTFILE')
 
 def users_to_graph():
 
   # From a CSV file with each node representing a edge on a graph, create a network graph that represents the relations dictated by the CSV file.
-
+  pass
 
 if __name__ == '__main__':
   x = main()
