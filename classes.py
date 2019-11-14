@@ -15,4 +15,3 @@ class UserInfo:
       Friends: {3},\n
       Followers: {4}
     """.format(self.id, self.description, self.handle, self.friends, self.followers)
-  

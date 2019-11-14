@@ -6,7 +6,7 @@ import tweepy # https://tweepy.readthedocs.io/en/latest/index.html
 import pprint
 from googlesearch import search # https://github.com/MarioVilas/googlesearch
 import pandas as pd
-import networkx # https://networkx.github.io/documentation/stable/install.html
+import networkx as nx # https://networkx.github.io/documentation/stable/install.html
 
 # Custom scripts
 import utils
@@ -41,6 +41,8 @@ def main():
 
 def get_users_in_lists(list_urls):
 
+  # For each list in list_urls, get all the users in each list, as an UserInfo object
+
   for tw_list in list_urls[:1]:
     
     tw_list = tw_list[tw_list.find('.com') + 4:]
@@ -49,29 +51,36 @@ def get_users_in_lists(list_urls):
 
     # Using Tweepy api, getting json of all users in list
     list_members_output = api.list_members(user, list_name)[:1]
-    pprint.pprint(list_members_output)
+    # pprint.pprint(list_members_output)
 
-    users_dictionary = {}
-    # Parsing json data and appending to appropriate lists instantiated above
-    for user_id in list_members_output:
-      users_dictionary[user_id._json['id']] = classes.UserInfo(
+    # Create a list of UserObject info for each user object in list_members_output
+    users = [classes.UserInfo(
         id = user_id._json['id'],
         description = user_id._json['description'],
         handle = user_id._json['screen_name'],
         followers = utils.get_ids_by_type("followers", user_id._json['screen_name']),
         friends = utils.get_ids_by_type("friends", user_id._json['screen_name'])
-      )
+      ) for user_id in list_members_output]
 
-    # for k,v in users_dictionary.items():
-    #   print(k, v)
-    for id, data in users_dictionary.items():
-      utils.to_csv(data, 'OUTFILE')
+    # print(str(users[0]))
+    # for id, data in users_dictionary.items():
+    #   utils.to_csv(data, 'OUTFILE')
 
-def users_to_graph():
+    return users
+
+def users_to_graph(users):
 
   # From a CSV file with each node representing a edge on a graph, create a network graph that represents the relations dictated by the CSV file.
-  pass
+  
+  # foreach user in users, create an node in the graph, and link it to it's followers and friends as edges
+  users_graph = nx.Graph()
+  for user in users:
+    # Add a new node with the 
+    users_graph.add_node(user.id, handle=user.handle)
+
+  print(users_graph.nodes.data())
 
 if __name__ == '__main__':
   x = main()
   y = get_users_in_lists(x)
+  m = users_to_graph(y)
