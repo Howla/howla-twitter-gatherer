@@ -2,3 +2,6 @@ tweepy
 pandas
 google
 networkx
+pymongo
+dnspython
+faker

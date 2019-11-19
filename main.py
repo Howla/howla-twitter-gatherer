@@ -8,7 +8,7 @@ from googlesearch import search # https://github.com/MarioVilas/googlesearch
 import pandas as pd
 import networkx as nx # https://networkx.github.io/documentation/stable/install.html
 
-# Custom scripts
+# Custom libraries
 import utils
 import classes
 
@@ -58,13 +58,12 @@ def get_users_in_lists(list_urls):
         id = user_id._json['id'],
         description = user_id._json['description'],
         handle = user_id._json['screen_name'],
-        followers = utils.get_ids_by_type("followers", user_id._json['screen_name']),
-        friends = utils.get_ids_by_type("friends", user_id._json['screen_name'])
+        followers = utils.get_ids_by_type('followers', user_id._json['screen_name']),
+        friends = utils.get_ids_by_type('friends', user_id._json['screen_name'])
       ) for user_id in list_members_output]
 
-    # print(str(users[0]))
-    # for id, data in users_dictionary.items():
-    #   utils.to_csv(data, 'OUTFILE')
+    result = utils.add_userinfo_to_db(users)
+    print(result)
 
     return users
 
@@ -73,14 +72,20 @@ def users_to_graph(users):
   # From a CSV file with each node representing a edge on a graph, create a network graph that represents the relations dictated by the CSV file.
   
   # foreach user in users, create an node in the graph, and link it to it's followers and friends as edges
-  users_graph = nx.Graph()
+  users_graph = nx.DiGraph()
   for user in users:
     # Add a new node with the 
     users_graph.add_node(user.id, handle=user.handle)
+    for friendid in user.friends:
+      users_graph.add_edge(friendid, user.id)
+      users_graph.add_edge(user.id, friendid)
+    for followerid in user.followers:
+      users_graph.add_edge(followerid, user.id)
 
   print(users_graph.nodes.data())
+  print(users_graph.number_of_edges())
 
 if __name__ == '__main__':
-  x = main()
-  y = get_users_in_lists(x)
-  m = users_to_graph(y)
+  # x = main()
+  # y = get_users_in_lists(x)
+  m = users_to_graph(utils.generate_sample_userinfo())
