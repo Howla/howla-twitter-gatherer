@@ -1,4 +1,5 @@
-#region Imports & Init
+#region Imports & Init API variables
+
 # System libraries
 import json
 import time
@@ -34,9 +35,11 @@ def get_ids_by_type(id_type, screen_name="ohitsdoh"):
   Get a list of user ids from a Twitter account by the type specified.
 
   Keyword arguments:
-
+  ===
   id_type -- the type of id to get (either friends or followers)
   screen_name -- the twitter account's screen name to get the ids from
+
+  return: ids -- the list of ids represented as integers
 
   '''
 
@@ -63,8 +66,10 @@ def add_userinfo_to_db(userinfo_collection):
   Add json-serialized UserInfo object(s) to the MongoDB database collection specified.
 
   Keyword arguments:
-
+  ===
   userinfo_collection -- The collection of UserInfo objects to be added to the database
+
+  return: the list of ObjectIds of the inserted UserInfo objects
 
   '''
 
@@ -92,8 +97,10 @@ def generate_sample_userinfo(limit=20):
   Generates sample UserInfo objects intended for testing purposes.
 
   Keyword arguments:
-
+  ===
   limit -- the number of UserInfo objects to generate
+
+  return: the list of UserInfo objects generated
 
   '''
 
