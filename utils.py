@@ -59,6 +59,30 @@ def get_ids_by_type(id_type, screen_name="ohitsdoh"):
       ids.extend(page)
 
   return ids
+
+def tweepy_user_to_userinfo_object(tweepy_user):
+
+  '''
+  Converts a tweepy.User object into a UserInfo object.
+
+  Keyword Arguments:
+  ===
+  tweepy_user -- the tweepy.User object to convert into a UserInfo object
+
+  return: userinfo_object -- the converted tweepy.User object as a UserInfo object
+
+  '''
+
+  userinfo_object = classes.UserInfo(
+        id = tweepy_user._json['id'],
+        description = tweepy_user._json['description'],
+        handle = tweepy_user._json['screen_name'],
+        followers = get_ids_by_type('followers', tweepy_user._json['screen_name']),
+        friends = get_ids_by_type('friends', tweepy_user._json['screen_name']),
+        tags = []
+  )
+
+  return userinfo_object
       
 def add_userinfo_to_db(userinfo_collection):
   
@@ -83,7 +107,8 @@ def add_userinfo_to_db(userinfo_collection):
     'description': userinfo.description,
     'handle': userinfo.handle,
     'followers': userinfo.followers,
-    'friends': userinfo.friends
+    'friends': userinfo.friends,
+    'tags': userinfo.tags
   } for userinfo in userinfo_collection]
 
   result = db_userinfo.insert_many(userinfo_to_be_inserted)
@@ -134,10 +159,10 @@ def generate_sample_userinfo(limit=20):
 
     # Add followers, minus your friends and yourself from the pool
     followers_to_add = []
-    follower_pool_size = random.randint(0, len(user_pool) - friend_pool_size - 1)
+    follower_pool_size = random.randint(0, len(user_pool) - 1)
     # Take a sample of users to be added as followers
     if follower_pool_size > 0:
-      followers_pool = [followerid for followerid in user_pool.keys() if followerid not in friends_to_add and followerid != userid]
+      followers_pool = [followerid for followerid in user_pool.keys() if followerid != userid]
       followers_to_add = random.sample(followers_pool, follower_pool_size)
     user_pool[userid]['followers'] = followers_to_add
 
@@ -146,32 +171,17 @@ def generate_sample_userinfo(limit=20):
     description = user_data['description'],
     handle = user_data['handle'],
     followers = user_data['followers'],
-    friends = user_data['friends']
+    friends = user_data['friends'],
+    tags = []
   ) for user_id, user_data in user_pool.items()]
 
   return users
 
 #endregion
 
-#region Depreciated Helpers
-
-def to_csv(user_info_dict, file_name):
-
-  with open(file_name + '.csv', 'a', newline='') as csvfile:
-    fieldnames = ['follower_id', 'followee_id']
-    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-    writer.writeheader()
-
-    # Add rows representing each follower of this account
-    for follower_user_id in user_info_dict['followers']:
-      # follower_user_id is a integer in a list
-      writer.writerow({'follower_id': follower_user_id, 'followee_id': user_info_dict['id']})
-
-    for friend_user_id in user_info_dict['friends']:
-      # friend_user_id is a integer in a list
-      writer.writerow({'follower_id': user_info_dict['id'], 'followee_id': friend_user_id})
-
-#endregion
-
 if __name__ == '__main__':
-  generate_sample_userinfo(limit=20)
+  # x = generate_sample_userinfo(limit=20)
+  # for userinfo in x:
+  #   print(userinfo)
+  y = get_ids_by_type('followers')
+  print(y)
