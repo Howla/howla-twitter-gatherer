@@ -29,6 +29,14 @@ fake.add_provider(lorem)
 
 #endregion
 
+# http://docs.tweepy.org/en/latest/code_snippet.html#handling-the-rate-limit-using-cursors
+def limit_handled(cursor):
+  while True:
+    try:
+        yield cursor.next()
+    except tweepy.RateLimitError:
+        time.sleep(15 * 60)
+
 def get_ids_by_type(id_type, screen_name="ohitsdoh"): 
 
   '''
@@ -51,10 +59,11 @@ def get_ids_by_type(id_type, screen_name="ohitsdoh"):
 
   # Get the list of ids, paginated by 5000 at a time.
   ids = []
-  for page in tweepy.Cursor(method_to_use, screen_name=screen_name).pages():
+  # Arbitarily set to get 100k followers right now, until decision on how to handle more data in memory
+  for page in limit_handled(tweepy.Cursor(method_to_use, screen_name=screen_name).pages(200)):
     if len(page) == 5000:
       ids.extend(page)
-      time.sleep(60)
+      time.sleep(30)
     else:
       ids.extend(page)
 
