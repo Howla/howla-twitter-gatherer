@@ -64,13 +64,6 @@ TOP_100_ACCOUNTS_BY_FOLLOWERS = [
 
 TEST_MODE_ACTIVE = True
 
-TEST_ACCOUNTS_FOR_CLASIFICATION = [
-  ('ohitsdoh', ['politics']),
-  ('_spe', ['technology']),
-  ('_pxlu', ['sports']),
-  ('suzannerivecca', ['media'])
-]
-
 #endregion
 
 def main():
