@@ -39,30 +39,37 @@ TOP_LEVEL_CATEGORIES = [
 # https://friendorfollow.com/twitter/most-followers/
 TOP_100_ACCOUNTS_BY_FOLLOWERS = [
   ('barackobama', ['politics']),
-  ('katyperry', ['entertainment']),
-  ('justinbieber', ['entertainment']),
-  ('rihanna', ['entertainment']),
-  ('taylorswift13', ['entertainment']),
-  ('cristiano', ['sports']),
-  ('ladygaga', ['entertainment']),
-  ('theellenshow', ['entertainment']),
-  ('youtube', ['media']),
-  ('arianagrande', ['entertainment']),
-  ('realdonaldtrump', ['politics']),
-  ('jtimberlake', ['entertainment']),
-  ('kimkardashian', ['entertainment']),
-  ('selenagomez', ['entertainment']),
-  ('twitter', ['media']),
-  ('britneyspears', ['entertainment']),
-  ('cnnbrk', ['media']),
-  ('shakira', ['entertainment']),
-  ('narendramodi', ['politics']),
-  ('jimmyfallon', ['entertainment'])
+  # ('katyperry', ['entertainment']),
+  # ('justinbieber', ['entertainment']),
+  # ('rihanna', ['entertainment']),
+  # ('taylorswift13', ['entertainment']),
+  # ('cristiano', ['sports']),
+  # ('ladygaga', ['entertainment']),
+  # ('theellenshow', ['entertainment']),
+  # ('youtube', ['media']),
+  # ('arianagrande', ['entertainment']),
+  # ('realdonaldtrump', ['politics']),
+  # ('jtimberlake', ['entertainment']),
+  # ('kimkardashian', ['entertainment']),
+  # ('selenagomez', ['entertainment']),
+  # ('twitter', ['media']),
+  # ('britneyspears', ['entertainment']),
+  # ('cnnbrk', ['media']),
+  # ('shakira', ['entertainment']),
+  # ('narendramodi', ['politics']),
+  # ('jimmyfallon', ['entertainment'])
 ]
 
 # For testing purposes
 
 TEST_MODE_ACTIVE = True
+
+TEST_ACCOUNTS_FOR_CLASIFICATION = [
+  ('ohitsdoh', ['politics']),
+  ('_spe', ['technology']),
+  ('_pxlu', ['sports']),
+  ('suzannerivecca', ['media'])
+]
 
 #endregion
 
@@ -131,7 +138,7 @@ def get_users(top_users_by_category):
   for category, category_data in top_users_by_category.items():
     for user_data in category_data:
       userinfo_object = utils.tweepy_user_to_userinfo_object(api.get_user(user_data[0]))
-      for follower in utils.limit_handled(tweepy.Cursor(api.followers).items(100000)):
+      for follower in utils.limit_handled(tweepy.Cursor(api.followers).items(100)):
         if follower._json['friends_count'] >= 10 and follower._json['id'] not in follower_ids_to_add:
           follower_userinfo_object = utils.tweepy_user_to_userinfo_object(follower)
           followers_to_add.append(follower_userinfo_object)
@@ -159,12 +166,17 @@ def users_to_graph(users):
   # foreach user in users, create an node in the graph, and link it to it's followers and friends as edges
   users_graph = nx.DiGraph()
   for user in users:
+    if user.id not in users_graph.nodes:
     # Add a new node with the id as the node identifer
-    users_graph.add_node(user.id, userinfo=user)
+      users_graph.add_node(user.id, userinfo=user)
     # Add directed edges with friends and followers
     for friendid in user.friends:
+      if friendid not in users_graph.nodes:
+        users_graph.add_node(friendid, next(n_user for n_user in users if n_user.id == friendid))
       users_graph.add_edge(user.id, friendid)
     for followerid in user.followers:
+      if followerid not in users_graph.nodes:
+        users_graph.add_node(followerid, next(n_user for n_user in users if n_user.id == followerid))
       users_graph.add_edge(followerid, user.id)
 
   return users_graph
@@ -190,7 +202,7 @@ def assign_top_level_categories(users_graph, top_level_reference_accounts):
   users_graph_handles = nx.get_node_attributes(users_graph, 'handle').values()
   top_level_userinfoes = [utils.tweepy_user_to_userinfo_object(api.get_user(account_info[0])) for account_info in top_level_reference_accounts]
   for top_level_userinfo in top_level_userinfoes:
-    userinfo_tags = next((x for x in top_level_reference_accounts if x[0] == top_level_userinfo.handle), None)
+    userinfo_tags = next((x[1] for x in top_level_reference_accounts if x[0] == top_level_userinfo.handle.lower()), None)
     top_level_userinfo.tags = userinfo_tags
     if TEST_MODE_ACTIVE:
       # Assign followers
@@ -204,9 +216,11 @@ def assign_top_level_categories(users_graph, top_level_reference_accounts):
     if top_level_userinfo.handle not in users_graph_handles:
       users_graph.add_node(top_level_userinfo.id, userinfo=top_level_userinfo)
       for friendid in top_level_userinfo.friends:
-        users_graph.add_edge(top_level_userinfo.id, friendid)
+        if friendid in users_graph.nodes:
+          users_graph.add_edge(top_level_userinfo.id, friendid)
       for followerid in top_level_userinfo.followers:
-        users_graph.add_edge(followerid, top_level_userinfo.id)
+        if followerid in users_graph.nodes:
+          users_graph.add_edge(followerid, top_level_userinfo.id)
 
   return users_graph
 
@@ -328,11 +342,11 @@ def get_users_in_lists(list_urls):
 
 if __name__ == '__main__':
   # x = main()
-  y = get_top_users_by_followers(TOP_LEVEL_CATEGORIES, TOP_100_ACCOUNTS_BY_FOLLOWERS)
-  print(y)
-  # m = users_to_graph(utils.generate_sample_userinfo(20))
-  # print(m.nodes)
-  # m = assign_top_level_categories(m, TEST_ACCOUNTS_FOR_CLASIFICATION)
+  # y = get_top_users_by_followers(TOP_LEVEL_CATEGORIES, TOP_100_ACCOUNTS_BY_FOLLOWERS)
+  # print(y)
+  m = users_to_graph(utils.generate_sample_userinfo(20))
+  print(m.nodes)
+  # m = assign_top_level_categories(m, TOP_100_ACCOUNTS_BY_FOLLOWERS)
   # y = nx.get_node_attributes(m, 'userinfo')
   # for k,v in y.items():
   #   print(k, v)

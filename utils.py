@@ -23,9 +23,14 @@ with open('credentials.json') as credentials_file:
 auth = tweepy.OAuthHandler(credentials['consumer_key'], credentials['consumer_secret'])
 auth.set_access_token(credentials['access_token'], credentials['access_token_secret'])
 api = tweepy.API(auth)
+
 # Init faker module and add relevent providers to generate fake data
 fake = Faker()
 fake.add_provider(lorem)
+
+# Init MonogoDB connection
+MONGO_CLIENT = pymongo.MongoClient('mongodb+srv://' + credentials['mongodbuser'] + ':' + credentials['mongodbpassword'] + '@howla-sandbox-fdsr1.mongodb.net/test?retryWrites=true&w=majority')
+TWITTER_USER_DATA_DB = MONGO_CLIENT.twitter_user_data
 
 #endregion
 
@@ -52,7 +57,7 @@ def get_ids_by_type(id_type, screen_name="ohitsdoh"):
   # Get the list of ids, paginated by 5000 at a time.
   ids = []
   # Arbitarily set to get 100k followers right now, until decision on how to handle more data in memory
-  for page in limit_handled(tweepy.Cursor(method_to_use, screen_name=screen_name).pages(10)):
+  for page in limit_handled(tweepy.Cursor(method_to_use, screen_name=screen_name).pages(2)):
     if len(page) == 5000:
       ids.extend(page)
       time.sleep(30)
@@ -99,12 +104,10 @@ def add_userinfo_to_db(userinfo_collection):
   '''
 
   # Connect to the MongoDB database and collection
-  client = pymongo.MongoClient('mongodb+srv://' + credentials['mongodbuser'] + ':' + credentials['mongodbpassword'] + '@howla-sandbox-fdsr1.mongodb.net/test?retryWrites=true&w=majority')
-  db = client['twitter_user_data']
-  db_userinfo = db.userinfo
+  db_userinfo = TWITTER_USER_DATA_DB.userinfo
 
   userinfo_to_be_inserted = [{ 
-    'userId': userinfo.id,
+    'userid': userinfo.id,
     'description': userinfo.description,
     'handle': userinfo.handle,
     'followers': userinfo.followers,
@@ -114,6 +117,24 @@ def add_userinfo_to_db(userinfo_collection):
 
   result = db_userinfo.insert_many(userinfo_to_be_inserted)
   return result.inserted_ids
+
+def hydrate_userinfo_objects_from_db():
+
+  db_userinfo = TWITTER_USER_DATA_DB.userinfo
+  hydrated_userinfoes = []
+
+  for userinfo in db_userinfo.find():
+    userinfo_object = classes.UserInfo(
+        id = userinfo['userid'],
+        description = userinfo['description'],
+        handle = userinfo['handle'],
+        followers = userinfo['followers']
+        friends = userinfo['friends']
+        tags = userinfo['tags']
+    )
+    hydrated_userinfoes.append(userinfo_object)
+  
+  return hydrated_userinfoes
 
 #region Misc Data Helpers
 
