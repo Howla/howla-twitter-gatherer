@@ -37,128 +37,28 @@ TOP_LEVEL_CATEGORIES = [
 ]
 
 # https://friendorfollow.com/twitter/most-followers/
-TOP_100_ACCOUNTS_BY_FOLLOWERS = {
-  'barackobama': {
-    'num_followers': 110418682,
-    'tags': [
-      'politics'
-    ]
-  },
-  'katyperry': {
-    'num_followers': 108285060, 
-    'tags': [
-      'entertainment'
-    ]
-  },
-  'justinbeiber': {
-    'num_followers': 107282921, 
-    'tags': [
-      'entertainment'
-    ]
-  },
-  'rihanna': {
-    'num_followers': 94579639, 
-    'tags': [
-      'entertainment'
-    ]
-  },  
-  'talyorswift13': {
-    'num_followers': 85171168, 
-    'tags': [
-      'entertainment'
-    ]
-  },  
-  'cristiano': {
-    'num_followers': 81139838, 
-    'tags': [
-      'sports'
-    ]
-  },  
-  'ladygaga': {
-    'num_followers': 80334549, 
-    'tags': [
-      'entertainment'
-    ]
-  },  
-  'theellenshow': {
-    'num_followers': 79055072, 
-    'tags': [
-      'entertainment'
-    ]
-  },  
-  'youtube': {
-    'num_followers': 72093748, 
-    'tags': [
-      'media'
-    ]
-  }, 
-  'arianagrande': {
-    'num_followers': 67544943, 
-    'tags': [
-      'entertainment'
-    ]
-  },   
-  'realdonaldtrump': {
-    'num_followers': 67544943, 
-    'tags': [
-      'politics'
-    ]
-  },  
-  'jtimberlake': {
-    'num_followers': 65026564, 
-    'tags': [
-      'entertainment'
-    ]
-  },  
-  'kimkardashian': {
-    'num_followers': 62377742, 
-    'tags': [
-      'entertainment'
-    ]
-  },  
-  'selenagomez': {
-    'num_followers': 58947690, 
-    'tags': [
-      'entertainment'
-    ]
-  }, 
-  'twitter': {
-    'num_followers': 56757969, 
-    'tags': [
-      'media'
-    ]
-  },  
-  'britneyspears': {
-    'num_followers': 56254837, 
-    'tags': [
-      'entertainment'
-    ]
-  }, 
-  'cnnbrk': {
-    'num_followers': 56110580, 
-    'tags': [
-      'media'
-    ]
-  }, 
-  'shakira': {
-    'num_followers': 51676098, 
-    'tags': [
-      'entertainment'
-    ]
-  }, 
-  'jimmyfallon': {
-    'num_followers': 51512361, 
-    'tags': [
-      'entertainment'
-    ]
-  }, 
-  'narendramodi': {
-    'num_followers': 51474434, 
-    'tags': [
-      'politics'
-    ]
-  }, 
-}
+TOP_100_ACCOUNTS_BY_FOLLOWERS = [
+  ('barackobama', ['politics']),
+  ('katyperry', ['entertainment']),
+  ('justinbieber', ['entertainment']),
+  ('rihanna', ['entertainment']),
+  ('taylorswift13', ['entertainment']),
+  ('cristiano', ['sports']),
+  ('ladygaga', ['entertainment']),
+  ('theellenshow', ['entertainment']),
+  ('youtube', ['media']),
+  ('arianagrande', ['entertainment']),
+  ('realdonaldtrump', ['politics']),
+  ('jtimberlake', ['entertainment']),
+  ('kimkardashian', ['entertainment']),
+  ('selenagomez', ['entertainment']),
+  ('twitter', ['media']),
+  ('britneyspears', ['entertainment']),
+  ('cnnbrk', ['media']),
+  ('shakira', ['entertainment']),
+  ('narendramodi', ['politics']),
+  ('jimmyfallon', ['entertainment'])
+]
 
 # For testing purposes
 
@@ -209,11 +109,11 @@ def get_top_users_by_followers(category_list, reference_accounts):
   for account_info in reference_accounts:
     tweepy_user_object = api.get_user(account_info[0])
     num_followers = tweepy_user_object._json['followers_count']
-    if account_info[1] in category_list:
-      if account_info[1] not in top_users_by_category.keys():
-        top_users_by_category[account_info[1]] = [(account_info[0], num_followers)]
+    if account_info[1][0] in category_list:
+      if account_info[1][0] not in top_users_by_category.keys():
+        top_users_by_category[account_info[1][0]] = [(account_info[0], num_followers)]
       else:
-        top_users_by_category[account_info[1]].append((account_info[0], num_followers))
+        top_users_by_category[account_info[1][0]].append((account_info[0], num_followers))
 
   for category, category_data in top_users_by_category.items():
     top_users_by_category[category] = sorted(category_data, key=lambda tup: tup[1], reverse=True)[:9]
@@ -229,7 +129,7 @@ def get_users(top_users_by_category):
   ===
   top_users_by_category -- a dictionary of categories, with the values being the list of users of that category, sorted by followers descending
 
-  return: None
+  return: result_ids -- the ObjectIds of the UserInfo objects that have been inserted into the database
 
   '''
   followers_to_add = []
@@ -435,7 +335,8 @@ def get_users_in_lists(list_urls):
 
 if __name__ == '__main__':
   # x = main()
-  # y = get_users_in_lists(x)
+  y = get_top_users_by_followers(TOP_LEVEL_CATEGORIES, TOP_100_ACCOUNTS_BY_FOLLOWERS)
+  print(y)
   # m = users_to_graph(utils.generate_sample_userinfo(20))
   # print(m.nodes)
   # m = assign_top_level_categories(m, TEST_ACCOUNTS_FOR_CLASIFICATION)
@@ -446,6 +347,6 @@ if __name__ == '__main__':
   # print(TOP_LEVEL_CATEGORIES)
   # n = classify_node('asd', TEST_ACCOUNTS_FOR_CLASIFICATION)
   # print(n)
-  user = api.get_user('barackobama')
-  followers = utils.get_ids_by_type('followers', 'barackobama')
-  print(followers)
+  # user = api.get_user('barackobama')
+  # followers = utils.get_ids_by_type('followers', 'barackobama')
+  # print(followers)
