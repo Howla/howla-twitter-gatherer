@@ -22,7 +22,7 @@ with open('credentials.json') as credentials_file:
 
 auth = tweepy.OAuthHandler(credentials['consumer_key'], credentials['consumer_secret'])
 auth.set_access_token(credentials['access_token'], credentials['access_token_secret'])
-api = tweepy.API(auth)
+api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True))
 
 # Init faker module and add relevent providers to generate fake data
 fake = Faker()
@@ -60,7 +60,7 @@ def get_ids_by_type(id_type, screen_name="ohitsdoh"):
   for page in limit_handled(tweepy.Cursor(method_to_use, screen_name=screen_name).pages(2)):
     if len(page) == 5000:
       ids.extend(page)
-      time.sleep(30)
+      time.sleep(10)
     else:
       ids.extend(page)
 
@@ -128,8 +128,8 @@ def hydrate_userinfo_objects_from_db():
         id = userinfo['userid'],
         description = userinfo['description'],
         handle = userinfo['handle'],
-        followers = userinfo['followers']
-        friends = userinfo['friends']
+        followers = userinfo['followers'],
+        friends = userinfo['friends'],
         tags = userinfo['tags']
     )
     hydrated_userinfoes.append(userinfo_object)

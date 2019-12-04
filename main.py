@@ -21,7 +21,7 @@ with open('credentials.json') as credentials_file:
 
 auth = tweepy.OAuthHandler(credentials['consumer_key'], credentials['consumer_secret'])
 auth.set_access_token(credentials['access_token'], credentials['access_token_secret'])
-api = tweepy.API(auth)
+api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True)
 
 TOP_LEVEL_CATEGORIES = [
   'sports',
@@ -137,14 +137,25 @@ def get_users(top_users_by_category):
 
   for category, category_data in top_users_by_category.items():
     for user_data in category_data:
-      userinfo_object = utils.tweepy_user_to_userinfo_object(api.get_user(user_data[0]))
-      for follower in utils.limit_handled(tweepy.Cursor(api.followers).items(100)):
-        if follower._json['friends_count'] >= 10 and follower._json['id'] not in follower_ids_to_add:
-          follower_userinfo_object = utils.tweepy_user_to_userinfo_object(follower)
-          followers_to_add.append(follower_userinfo_object)
-          follower_ids_to_add.append(follower._json['id'])
+      tweepy_user_object = api.get_user(user_data[0])
+      userinfo_object = utils.tweepy_user_to_userinfo_object(tweepy_user_object)
+      for page in tweepy.Cursor(api.followers_ids, screen_name=user_data[0]).pages(1):
+        for follower_id in random.sample(page, 10):
+          try:
+            follower_user_object = api.get_user(follower_id)
+            print(follower_user_object)
+            if follower_user_object._json['friends_count'] >= 10 and follower_user_object._json['id'] not in follower_ids_to_add:
+              follower_userinfo_object = utils.tweepy_user_to_userinfo_object(follower_user_object)
+              followers_to_add.append(follower_userinfo_object)
+              follower_ids_to_add.append(follower_user_object._json['id'])
+          except tweepy.TweepError:
+            print("Failed to run the command on that user, Skipping...")
+            continue
+
+  print(followers_to_add)
+  result_ids = utils.add_userinfo_to_db(followers_to_add)
   
-  result_ids = add_userinfo_to_db(followers_to_add)
+  return result_ids
 
 #endregion
 
@@ -342,10 +353,12 @@ def get_users_in_lists(list_urls):
 
 if __name__ == '__main__':
   # x = main()
-  # y = get_top_users_by_followers(TOP_LEVEL_CATEGORIES, TOP_100_ACCOUNTS_BY_FOLLOWERS)
-  # print(y)
-  m = users_to_graph(utils.generate_sample_userinfo(20))
-  print(m.nodes)
+  y = get_top_users_by_followers(TOP_LEVEL_CATEGORIES, TOP_100_ACCOUNTS_BY_FOLLOWERS)
+  print(y)
+  v = get_users(y)
+  print(v)
+  # m = users_to_graph(utils.generate_sample_userinfo(20))
+  # print(m.nodes)
   # m = assign_top_level_categories(m, TOP_100_ACCOUNTS_BY_FOLLOWERS)
   # y = nx.get_node_attributes(m, 'userinfo')
   # for k,v in y.items():
