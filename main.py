@@ -133,24 +133,39 @@ def get_users(top_users_by_category):
 
   '''
   followers_to_add = []
-  follower_ids_to_add = []
+  already_processed_follower_ids = []
 
   for category, category_data in top_users_by_category.items():
     for user_data in category_data:
       tweepy_user_object = api.get_user(user_data[0])
       userinfo_object = utils.tweepy_user_to_userinfo_object(tweepy_user_object)
+      # =================
       for page in tweepy.Cursor(api.followers_ids, screen_name=user_data[0]).pages(1):
         for follower_id in random.sample(page, 10):
-          try:
-            follower_user_object = api.get_user(follower_id)
-            print(follower_user_object)
-            if follower_user_object._json['friends_count'] >= 10 and follower_user_object._json['id'] not in follower_ids_to_add:
-              follower_userinfo_object = utils.tweepy_user_to_userinfo_object(follower_user_object)
-              followers_to_add.append(follower_userinfo_object)
-              follower_ids_to_add.append(follower_user_object._json['id'])
-          except tweepy.TweepError:
-            print("Failed to run the command on that user, Skipping...")
-            continue
+          if follower_id not in already_processed_follower_ids:
+            try:
+              follower_user_object = api.get_user(follower_id)
+              print(follower_user_object)
+              if follower_user_object._json['friends_count'] >= 10 and follower_id not in follower_ids_to_add:
+                follower_userinfo_object = utils.tweepy_user_to_userinfo_object(follower_user_object)
+                followers_to_add.append(follower_userinfo_object)
+            except tweepy.TweepError:
+              print("Failed to run the command on that user, Skipping...")
+              continue
+          already_processed_follower_ids.append(follower_id)
+      # =================
+      # for page in tweepy.Cursor(api.followers_ids, screen_name=user_data[0]).pages():
+      #   for follower_id in page:
+      #     if follower_id not in already_processed_follower_ids:
+      #       try:
+      #         follower_user_object = api.get_user(follower_id)
+      #         if follower_user_object._json['friends_count'] >= 10 and follower_id not in follower_ids_to_add:
+      #           follower_userinfo_object = utils.tweepy_user_to_userinfo_object(follower_user_object)
+      #           followers_to_add.append(follower_userinfo_object)
+      #       except tweepy.TweepError:
+      #         print("Failed to run the command on that user, Skipping...")
+      #         continue
+      #     already_processed_follower_ids.append(follower_id)
 
   print(followers_to_add)
   result_ids = utils.add_userinfo_to_db(followers_to_add)
@@ -183,11 +198,13 @@ def users_to_graph(users):
     # Add directed edges with friends and followers
     for friendid in user.friends:
       if friendid not in users_graph.nodes:
-        users_graph.add_node(friendid, next(n_user for n_user in users if n_user.id == friendid))
+        friend_user = next(n_user for n_user in users if n_user.id == friendid)
+        users_graph.add_node(friendid, userinfo=friend_user)
       users_graph.add_edge(user.id, friendid)
     for followerid in user.followers:
       if followerid not in users_graph.nodes:
-        users_graph.add_node(followerid, next(n_user for n_user in users if n_user.id == followerid))
+        friend_user = next(n_user for n_user in users if n_user.id == followerid)
+        users_graph.add_node(followerid, userinfo=friend_user)
       users_graph.add_edge(followerid, user.id)
 
   return users_graph
@@ -285,69 +302,6 @@ def get_breakdown_by_category(reference_accounts):
     TOP_ACCOUNTS_BY_CATEGORIES[category] = sorted(category_data, key=lambda tup: tup[1], reverse=True)
 
   return TOP_ACCOUNTS_BY_CATEGORIES
-
-#endregion
-
-#region To-be-restructured
-
-def get_lists_of_users(keywords):
-
-  '''
-  Get lists of Twitter users based on keywords from the keywords list.
-
-  Keyword Arguments:
-  ====
-  keywords -- the list of keywords to search Twitter lists for
-
-  return: a list of urls that corresponds to the keywords provided
-
-  '''
-
-  # Auth to Twitter's servers
-  # Get a dump of each user
-  # foreach user, get:
-  # @Name - Twitter Handle - String
-  # Bio information - string
-  # Who they are following - List
-  # Who is following them - List
-
-  # https://towardsdatascience.com/use-google-and-tweepy-to-build-a-dataset-of-twitter-users-cbfd556493a9
-  list_urls = []
-  for keyword_string in keywords:
-    for url in search("site:twitter.com lists " + keyword_string, stop=20):
-      if '/lists/' in url:
-        list_urls.append(url)
-
-  return list_urls
-
-def get_users_in_lists(list_urls):
-
-  '''
-  For each list in list_urls, get all the users in each list, as an UserInfo object.
-
-  Keyword Arguments:
-  ===
-  list_urls -- the urls of the lists of Twitter users to be converted to UserInfo objects
-
-  return: a list of UserInfo objects
-
-  '''
-
-  for tw_list in list_urls[:1]:
-    
-    tw_list = tw_list[tw_list.find('.com') + 4:]
-    user = tw_list.split('/')[1]
-    list_name = tw_list.split('/')[3]
-
-    # Using Tweepy api, getting json of all users in list
-    list_members_output = api.list_members(user, list_name)[:1]
-    # pprint.pprint(list_members_output)
-
-    # Create a list of UserObject info for each user object in list_members_output
-    users = [utils.tweepy_user_to_userinfo_object(user_id) for user_id in list_members_output]
-    result = utils.add_userinfo_to_db(users)
-
-    return users
 
 #endregion
 

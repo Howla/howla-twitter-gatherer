@@ -22,7 +22,7 @@ with open('credentials.json') as credentials_file:
 
 auth = tweepy.OAuthHandler(credentials['consumer_key'], credentials['consumer_secret'])
 auth.set_access_token(credentials['access_token'], credentials['access_token_secret'])
-api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True))
+api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True)
 
 # Init faker module and add relevent providers to generate fake data
 fake = Faker()

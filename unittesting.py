@@ -1,8 +1,11 @@
 import unittest
 import json
 import pymongo
+import networkx as nx
+import random
 
 import main
+import utils
 
 class TestDataGatheringMethods(unittest.TestCase):
 
@@ -87,6 +90,8 @@ class TestDataGatheringMethods(unittest.TestCase):
     self._collection.insert_one(test_document)
     self.assertIn('data_gathering_test', self._client.list_database_names())
     self.assertIn('test_collection', self._db.list_collection_names())
+
+  #region main._get_top_users_by_followers
   
   def test_test_get_top_users_by_followers_empty(self):
     RESULT_OUTPUT = main.get_top_users_by_followers([], self._REFERENCE_ACCOUNTS)
@@ -122,6 +127,41 @@ class TestDataGatheringMethods(unittest.TestCase):
         elem in RESULT_OUTPUT for elem in ACCOUNTS_NOT_IN
       )
     )
+
+  #endregion
+
+  #region main.users_to_graph
+
+  def test_users_to_graph_empty(self):
+    EMPTY_GRAPH = nx.DiGraph()
+    self.assertEqual(len(EMPTY_GRAPH.nodes), len(main.users_to_graph([]).nodes))
+
+  def test_users_to_graph_number_of_nodes_created(self):
+    NUMBER_OF_TEST_USERS = random.randint(5, 20)
+    TEST_USERINFO_LIST = utils.generate_sample_userinfo(NUMBER_OF_TEST_USERS)
+    TEST_USERS_GRAPH = main.users_to_graph(TEST_USERINFO_LIST)
+    self.assertTrue(NUMBER_OF_TEST_USERS, len(TEST_USERS_GRAPH.nodes))
+
+  def test_users_to_graph_correct_users_inserted(self):
+    TEST_USERINFO_LIST = utils.generate_sample_userinfo(20)
+    TEST_USER_ID_LIST = [userinfo.id for userinfo in TEST_USERINFO_LIST]
+    TEST_USERS_GRAPH = main.users_to_graph(TEST_USERINFO_LIST)
+    self.assertTrue(
+      any(
+        elem in TEST_USERS_GRAPH.nodes for elem in TEST_USER_ID_LIST
+      )
+    )
+
+  def test_users_to_graph_correct_edges_created(self):
+    TEST_USERINFO_LIST = utils.generate_sample_userinfo(20)
+    TEST_USERS_GRAPH = main.users_to_graph(TEST_USERINFO_LIST)
+    for userinfo in TEST_USERINFO_LIST:
+      for follower_id in userinfo.followers:
+        self.assertTrue(TEST_USERS_GRAPH.has_edge(follower_id, userinfo.id))
+      for friend_id in userinfo.friends:
+        self.assertTrue(TEST_USERS_GRAPH.has_edge(userinfo.id, friend_id))
+
+  #endregion
 
   @unittest.skip("demonstrating skipping")
   def test_check_delete_db(self):
