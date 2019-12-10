@@ -47,31 +47,6 @@ TOP_ACCOUNTS_BY_CATEGORIES = {
   'science': ['nasa', 'neiltyson', 'billnye', 'richarddawkins', 'profbriancox', 'natogeo', 'WHO', 'CERN', 'ScienceNews', 'NSF']
 } 
 
-
-# https://friendorfollow.com/twitter/most-followers/
-TOP_100_ACCOUNTS_BY_FOLLOWERS = [
-  ('barackobama', ['politics']),
-  # ('katyperry', ['entertainment']),
-  # ('justinbieber', ['entertainment']),
-  # ('rihanna', ['entertainment']),
-  # ('taylorswift13', ['entertainment']),
-  # ('cristiano', ['sports']),
-  # ('ladygaga', ['entertainment']),
-  # ('theellenshow', ['entertainment']),
-  # ('youtube', ['media']),
-  # ('arianagrande', ['entertainment']),
-  # ('realdonaldtrump', ['politics']),
-  # ('jtimberlake', ['entertainment']),
-  # ('kimkardashian', ['entertainment']),
-  # ('selenagomez', ['entertainment']),
-  # ('twitter', ['media']),
-  # ('britneyspears', ['entertainment']),
-  # ('cnnbrk', ['media']),
-  # ('shakira', ['entertainment']),
-  # ('narendramodi', ['politics']),
-  # ('jimmyfallon', ['entertainment'])
-]
-
 # For testing purposes
 
 TEST_MODE_ACTIVE = True
