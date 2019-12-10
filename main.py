@@ -29,12 +29,24 @@ TOP_LEVEL_CATEGORIES = [
   'media',
   'food',
   'politics',
-  'fashion',
   'technology',
   'religion',
-  'travel',
+  'culture',
   'science'
 ]
+
+TOP_ACCOUNTS_BY_CATEGORIES = {
+  'sports': ['cristiano', 'nba', 'nfl', 'mlb', 'premierleague', 'nhl', 'kingjames', 'AaronRodgers12', 'MikeTrout', 'RafaelNadal'],
+  'entertainment': ['katyperry', 'taylorswift13', 'BTS_twt', 'theellenshow', 'RobertDowneyJr', 'ladygaga', 'LeoDiCaprio', 'Marvel', 'justinbieber', 'Disney'],
+  'media': ['cnnbrk', 'FoxNews', 'MSNBC', 'AJEnglish', 'BBCWorld', 'Reuters', 'AP', 'twitter', 'youtube', 'instagram'],
+  'food': ['McDonalds', 'CocaCola', 'Wendys', 'Starbucks', 'SUBWAY', 'ChipotleTweets', 'pizzahut', 'dunkindonuts', 'BurgerKing'],
+  'politics': ['barackobama', 'realdonaldtrump', 'narendramodi', 'sensanders', 'hillaryclinton', 'BorisJohnson', 'JustinTrudeau', 'AbeShinzo', 'EmmanuelMacron'],
+  'technology': ['apple', 'microsoft', 'google', 'amazon', 'elonmusk', 'billgates', 'tim_cook', 'spacex', 'gmail', 'firefox'],
+  'religion': ['Pontifex', 'JoelOsteen', 'JoyceMeyer'],
+  'culture': ['jk_rowling', 'stephenking', 'goodreads', 'MuseumModernArt', 'smithsonian', 'metmuseum', 'GRRMspeaking'],
+  'science': ['nasa', 'neiltyson', 'billnye', 'richarddawkins', 'profbriancox', 'natogeo', 'WHO', 'CERN', 'ScienceNews', 'NSF']
+} 
+
 
 # https://friendorfollow.com/twitter/most-followers/
 TOP_100_ACCOUNTS_BY_FOLLOWERS = [
@@ -90,7 +102,7 @@ def main():
 
 #region Part 1: Gathering Data
 
-def get_top_users_by_followers(category_list, reference_accounts):
+def get_top_users_by_followers(category_list, reference_accounts_by_category):
 
   '''
   Gets the top 10 users per category by followers specified by category_list.
@@ -106,14 +118,17 @@ def get_top_users_by_followers(category_list, reference_accounts):
 
   top_users_by_category = {}
   
-  for account_info in reference_accounts:
-    tweepy_user_object = api.get_user(account_info[0])
-    num_followers = tweepy_user_object._json['followers_count']
-    if account_info[1][0] in category_list:
-      if account_info[1][0] not in top_users_by_category.keys():
-        top_users_by_category[account_info[1][0]] = [(account_info[0], num_followers)]
-      else:
-        top_users_by_category[account_info[1][0]].append((account_info[0], num_followers))
+  for category in reference_accounts_by_category.keys():
+    users_in_category = reference_accounts_by_category[category]
+    for account_handle in users_in_category:
+      print(account_handle)
+      tweepy_user_object = api.get_user(account_handle)
+      num_followers = tweepy_user_object._json['followers_count']
+      if category in category_list:
+        if category not in top_users_by_category.keys():
+          top_users_by_category[category] = [(account_handle, num_followers)]
+        else:
+          top_users_by_category[category].append((account_handle, num_followers))
 
   for category, category_data in top_users_by_category.items():
     top_users_by_category[category] = sorted(category_data, key=lambda tup: tup[1], reverse=True)[:9]
@@ -252,10 +267,14 @@ def assign_top_level_categories(users_graph, top_level_reference_accounts):
 
   return users_graph
 
+#endregion
+
+#region Part 3: Categorization & Propagation
+
 def categorize_node(user_graph_node):
 
   '''
-  Given a graph node repsenting a UserInfo object, classify by keywords based on it's followers and friends.
+  Given a graph node repsenting a UserInfo object, classify by keywords based on its friends.
 
   Keyword Argument:
   ===
@@ -280,37 +299,33 @@ def categorize_node(user_graph_node):
 
 #endregion
 
-#region Part 3: Categorization & Propagation
-
-#endregion
-
 #region Helpers
 
 def get_breakdown_by_category(reference_accounts):
 
-  TOP_ACCOUNTS_BY_CATEGORIES = {}
+  TOP_ACCOUNTS_PER_CATEGORY = {}
   for handle in reference_accounts.keys():
     # The first tag should be the primary tag
     account_primary_tag = reference_accounts[handle]['tags'][0]
     account_num_followers = api.get_users(handle)._json['followers_count']
-    if account_primary_tag not in TOP_ACCOUNTS_BY_CATEGORIES:
-      TOP_ACCOUNTS_BY_CATEGORIES[account_primary_tag] = [(handle, account_num_followers)]
+    if account_primary_tag not in TOP_ACCOUNTS_PER_CATEGORY:
+      TOP_ACCOUNTS_PER_CATEGORY[account_primary_tag] = [(handle, account_num_followers)]
     else:
-      TOP_ACCOUNTS_BY_CATEGORIES[account_primary_tag].append((handle, account_num_followers))
+      TOP_ACCOUNTS_PER_CATEGORY[account_primary_tag].append((handle, account_num_followers))
 
-  for category, category_data in TOP_ACCOUNTS_BY_CATEGORIES.items():
-    TOP_ACCOUNTS_BY_CATEGORIES[category] = sorted(category_data, key=lambda tup: tup[1], reverse=True)
+  for category, category_data in TOP_ACCOUNTS_PER_CATEGORY.items():
+    TOP_ACCOUNTS_PER_CATEGORY[category] = sorted(category_data, key=lambda tup: tup[1], reverse=True)
 
-  return TOP_ACCOUNTS_BY_CATEGORIES
+  return TOP_ACCOUNTS_PER_CATEGORY
 
 #endregion
 
 if __name__ == '__main__':
   # x = main()
-  y = get_top_users_by_followers(TOP_LEVEL_CATEGORIES, TOP_100_ACCOUNTS_BY_FOLLOWERS)
+  y = get_top_users_by_followers(TOP_LEVEL_CATEGORIES, TOP_ACCOUNTS_BY_CATEGORIES)
   print(y)
-  v = get_users(y)
-  print(v)
+  # v = get_users(y)
+  # print(v)
   # m = users_to_graph(utils.generate_sample_userinfo(20))
   # print(m.nodes)
   # m = assign_top_level_categories(m, TOP_100_ACCOUNTS_BY_FOLLOWERS)
