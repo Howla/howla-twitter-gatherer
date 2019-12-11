@@ -217,5 +217,5 @@ if __name__ == '__main__':
   # x = generate_sample_userinfo(limit=20)
   # for userinfo in x:
   #   print(userinfo)
-  y = get_ids_by_type('followers')
+  y = hydrate_userinfo_objects_from_db()
   print(y)

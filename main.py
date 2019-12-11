@@ -10,6 +10,7 @@ import pprint
 from googlesearch import search # https://github.com/MarioVilas/googlesearch
 import pandas as pd
 import networkx as nx # https://networkx.github.io/documentation/stable/install.html
+from faker import Faker # https://faker.readthedocs.io/en/stable/
 
 # Custom libraries
 import utils
@@ -23,28 +24,30 @@ auth = tweepy.OAuthHandler(credentials['consumer_key'], credentials['consumer_se
 auth.set_access_token(credentials['access_token'], credentials['access_token_secret'])
 api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True)
 
+fake = Faker()
+
 TOP_LEVEL_CATEGORIES = [
   'sports',
-  'entertainment',
-  'media',
-  'food',
-  'politics',
-  'technology',
-  'religion',
-  'culture',
-  'science'
+  # 'entertainment',
+  # 'media',
+  # 'food',
+  # 'politics',
+  # 'technology',
+  # 'religion',
+  # 'culture',
+  # 'science'
 ]
 
 TOP_ACCOUNTS_BY_CATEGORIES = {
   'sports': ['cristiano', 'nba', 'nfl', 'mlb', 'premierleague', 'nhl', 'kingjames', 'AaronRodgers12', 'MikeTrout', 'RafaelNadal'],
-  'entertainment': ['katyperry', 'taylorswift13', 'BTS_twt', 'theellenshow', 'RobertDowneyJr', 'ladygaga', 'LeoDiCaprio', 'Marvel', 'justinbieber', 'Disney'],
-  'media': ['cnnbrk', 'FoxNews', 'MSNBC', 'AJEnglish', 'BBCWorld', 'Reuters', 'AP', 'twitter', 'youtube', 'instagram'],
-  'food': ['McDonalds', 'CocaCola', 'Wendys', 'Starbucks', 'SUBWAY', 'ChipotleTweets', 'pizzahut', 'dunkindonuts', 'BurgerKing'],
-  'politics': ['barackobama', 'realdonaldtrump', 'narendramodi', 'sensanders', 'hillaryclinton', 'BorisJohnson', 'JustinTrudeau', 'AbeShinzo', 'EmmanuelMacron'],
-  'technology': ['apple', 'microsoft', 'google', 'amazon', 'elonmusk', 'billgates', 'tim_cook', 'spacex', 'gmail', 'firefox'],
-  'religion': ['Pontifex', 'JoelOsteen', 'JoyceMeyer'],
-  'culture': ['jk_rowling', 'stephenking', 'goodreads', 'MuseumModernArt', 'smithsonian', 'metmuseum', 'GRRMspeaking'],
-  'science': ['nasa', 'neiltyson', 'billnye', 'richarddawkins', 'profbriancox', 'natogeo', 'WHO', 'CERN', 'ScienceNews', 'NSF']
+  # 'entertainment': ['katyperry', 'taylorswift13', 'BTS_twt', 'theellenshow', 'RobertDowneyJr', 'ladygaga', 'LeoDiCaprio', 'Marvel', 'justinbieber', 'Disney'],
+  # 'media': ['cnnbrk', 'FoxNews', 'MSNBC', 'AJEnglish', 'BBCWorld', 'Reuters', 'AP', 'twitter', 'youtube', 'instagram'],
+  # 'food': ['McDonalds', 'CocaCola', 'Wendys', 'Starbucks', 'SUBWAY', 'ChipotleTweets', 'pizzahut', 'dunkindonuts', 'BurgerKing'],
+  # 'politics': ['barackobama', 'realdonaldtrump', 'narendramodi', 'sensanders', 'hillaryclinton', 'BorisJohnson', 'JustinTrudeau', 'AbeShinzo', 'EmmanuelMacron'],
+  # 'technology': ['apple', 'microsoft', 'google', 'amazon', 'elonmusk', 'billgates', 'tim_cook', 'spacex', 'gmail', 'firefox'],
+  # 'religion': ['Pontifex', 'JoelOsteen', 'JoyceMeyer'],
+  # 'culture': ['jk_rowling', 'stephenking', 'goodreads', 'MuseumModernArt', 'smithsonian', 'metmuseum', 'GRRMspeaking'],
+  # 'science': ['nasa', 'neiltyson', 'billnye', 'richarddawkins', 'profbriancox', 'natogeo', 'WHO', 'CERN', 'ScienceNews', 'NSF']
 } 
 
 # For testing purposes
@@ -122,34 +125,38 @@ def get_users(top_users_by_category):
   return: result_ids -- the ObjectIds of the UserInfo objects that have been inserted into the database
 
   '''
-  followers_to_add = []
+  userinfo_objects_to_add = []
   already_processed_follower_ids = []
 
   for category, category_data in top_users_by_category.items():
     for user_data in category_data:
       tweepy_user_object = api.get_user(user_data[0])
       userinfo_object = utils.tweepy_user_to_userinfo_object(tweepy_user_object)
-      # =================
+      current_user_followers = []
+      # # =================
       for page in tweepy.Cursor(api.followers_ids, screen_name=user_data[0]).pages(1):
         for follower_id in random.sample(page, 10):
           if follower_id not in already_processed_follower_ids:
             try:
               follower_user_object = api.get_user(follower_id)
               print(follower_user_object)
-              if follower_user_object._json['friends_count'] >= 10 and follower_id not in follower_ids_to_add:
+              if follower_user_object._json['friends_count'] >= 10 and follower_user_object._json['follower_count'] >= 5 and follower_id not in already_processed_follower_ids:
                 follower_userinfo_object = utils.tweepy_user_to_userinfo_object(follower_user_object)
-                followers_to_add.append(follower_userinfo_object)
+                userinfo_objects_to_add.append(follower_userinfo_object)
+                current_user_followers.append(follower_id)
             except tweepy.TweepError:
               print("Failed to run the command on that user, Skipping...")
               continue
           already_processed_follower_ids.append(follower_id)
+      userinfo_object.followers = current_user_followers
+      userinfo_objects_to_add.append(userinfo_object)
       # =================
       # for page in tweepy.Cursor(api.followers_ids, screen_name=user_data[0]).pages():
       #   for follower_id in page:
       #     if follower_id not in already_processed_follower_ids:
       #       try:
       #         follower_user_object = api.get_user(follower_id)
-      #         if follower_user_object._json['friends_count'] >= 10 and follower_id not in follower_ids_to_add:
+      #         if follower_user_object._json['friends_count'] >= 10 and follower_id not in already_processed_follower_ids:
       #           follower_userinfo_object = utils.tweepy_user_to_userinfo_object(follower_user_object)
       #           followers_to_add.append(follower_userinfo_object)
       #       except tweepy.TweepError:
@@ -188,18 +195,22 @@ def users_to_graph(users):
     # Add directed edges with friends and followers
     for friendid in user.friends:
       if friendid not in users_graph.nodes:
-        friend_user = next(n_user for n_user in users if n_user.id == friendid)
+        friend_user = next((n_user for n_user in users if n_user.id == friendid), None)
+        if friend_user is None:
+          friend_user = utils.tweepy_user_to_userinfo_object(api.get_user(friendid))
         users_graph.add_node(friendid, userinfo=friend_user)
       users_graph.add_edge(user.id, friendid)
     for followerid in user.followers:
       if followerid not in users_graph.nodes:
-        friend_user = next(n_user for n_user in users if n_user.id == followerid)
-        users_graph.add_node(followerid, userinfo=friend_user)
+        follower_user = next((n_user for n_user in users if n_user.id == followerid), None)
+        if follower_user is None:
+          follower_user = utils.tweepy_user_to_userinfo_object(api.get_user(followerid))
+        users_graph.add_node(followerid, userinfo=follower_user)
       users_graph.add_edge(followerid, user.id)
 
   return users_graph
 
-def assign_top_level_categories(users_graph, top_level_reference_accounts):
+def assign_top_level_categories(users_graph, top_level_userinfo_objects):
 
   ''' 
   Assigns tags for categories for top level nodes based on reference accounts to the given graph.
@@ -218,9 +229,8 @@ def assign_top_level_categories(users_graph, top_level_reference_accounts):
   # To access the node's attributes, it's simply user_graph['node_A'].attribute_A
 
   users_graph_handles = nx.get_node_attributes(users_graph, 'handle').values()
-  top_level_userinfoes = [utils.tweepy_user_to_userinfo_object(api.get_user(account_info[0])) for account_info in top_level_reference_accounts]
-  for top_level_userinfo in top_level_userinfoes:
-    userinfo_tags = next((x[1] for x in top_level_reference_accounts if x[0] == top_level_userinfo.handle.lower()), None)
+  for top_level_userinfo in top_level_userinfo_objects:
+    userinfo_tags = next((x[1] for x in top_level_reference_accounts if x[0] == top_level_userinfo_objects.handle.lower()), None)
     top_level_userinfo.tags = userinfo_tags
     if TEST_MODE_ACTIVE:
       # Assign followers
@@ -231,20 +241,30 @@ def assign_top_level_categories(users_graph, top_level_reference_accounts):
       friends_pool_size = random.randint(0, len(users_graph.nodes))
       friends_pool = random.sample(users_graph.nodes, friends_pool_size)
       top_level_userinfo.friends = friends_pool
-    if top_level_userinfo.handle not in users_graph_handles:
-      users_graph.add_node(top_level_userinfo.id, userinfo=top_level_userinfo)
-      for friendid in top_level_userinfo.friends:
-        if friendid in users_graph.nodes:
-          users_graph.add_edge(top_level_userinfo.id, friendid)
-      for followerid in top_level_userinfo.followers:
-        if followerid in users_graph.nodes:
-          users_graph.add_edge(followerid, top_level_userinfo.id)
 
   return users_graph
 
 #endregion
 
 #region Part 3: Categorization & Propagation
+
+def propagate_tags(users_graph):
+
+  # https://stackoverflow.com/questions/21627457/looping-through-nodes-and-extract-attributes-in-networkx
+  # First pass, the order matters, need to figure out when it shouldn't
+  for user_id, user_attributes in users_graph.nodes(data=True):
+    # e.x (873588304690, {'userinfo': <classes.UserInfo object at 0x000002BB4E0B2390>})
+    # user_attributes is all the attributes assigned to the node
+    userinfo_object = user_attributes['userinfo']
+    for friend_id in userinfo_object.friends:
+      print(friend_id)
+      friend_userinfo_object = users_graph.nodes[friend_id]['userinfo']
+      if len(friend_userinfo_object.tags) > 0:
+        for tag in friend_userinfo_object.tags:
+          if tag not in userinfo_object.tags:
+            userinfo_object.tags.append(tag)
+  
+  return users_graph
 
 def categorize_node(user_graph_node):
 
@@ -297,12 +317,19 @@ def get_breakdown_by_category(reference_accounts):
 
 if __name__ == '__main__':
   # x = main()
-  y = get_top_users_by_followers(TOP_LEVEL_CATEGORIES, TOP_ACCOUNTS_BY_CATEGORIES)
-  print(y)
+  # y = get_top_users_by_followers(TOP_LEVEL_CATEGORIES, TOP_ACCOUNTS_BY_CATEGORIES)
+  # print(y)
   # v = get_users(y)
   # print(v)
-  # m = users_to_graph(utils.generate_sample_userinfo(20))
-  # print(m.nodes)
+  # m = utils.hydrate_userinfo_objects_from_db()
+  # print(m)
+  m = users_to_graph(utils.generate_sample_userinfo(5))
+  for info, node_a in m.nodes(data=True):
+    node_a['userinfo'].tags = fake.words(nb=1, ext_word_list=None)
+    print(node_a['userinfo'])
+  m = propagate_tags(m)
+  for info, node_a in m.nodes(data=True):
+    print(node_a['userinfo'])
   # m = assign_top_level_categories(m, TOP_100_ACCOUNTS_BY_FOLLOWERS)
   # y = nx.get_node_attributes(m, 'userinfo')
   # for k,v in y.items():
