@@ -3,10 +3,11 @@
 # System libraries
 import json
 import random
+import copy
+import pprint
 
 # Third party libraries (pip)
 import tweepy # https://tweepy.readthedocs.io/en/latest/index.html
-import pprint
 from googlesearch import search # https://github.com/MarioVilas/googlesearch
 import pandas as pd
 import networkx as nx # https://networkx.github.io/documentation/stable/install.html
@@ -140,7 +141,7 @@ def get_users(top_users_by_category):
             try:
               follower_user_object = api.get_user(follower_id)
               print(follower_user_object)
-              if follower_user_object._json['friends_count'] >= 10 and follower_user_object._json['follower_count'] >= 5 and follower_id not in already_processed_follower_ids:
+              if follower_user_object._json['friends_count'] >= 10 and follower_user_object._json['followers_count'] >= 5 and follower_id not in already_processed_follower_ids:
                 follower_userinfo_object = utils.tweepy_user_to_userinfo_object(follower_user_object)
                 userinfo_objects_to_add.append(follower_userinfo_object)
                 current_user_followers.append(follower_id)
@@ -164,8 +165,8 @@ def get_users(top_users_by_category):
       #         continue
       #     already_processed_follower_ids.append(follower_id)
 
-  print(followers_to_add)
-  result_ids = utils.add_userinfo_to_db(followers_to_add)
+  print(userinfo_objects_to_add)
+  result_ids = utils.add_userinfo_to_db(userinfo_objects_to_add)
   
   return result_ids
 
@@ -248,21 +249,24 @@ def assign_top_level_categories(users_graph, top_level_userinfo_objects):
 
 #region Part 3: Categorization & Propagation
 
+def tags_from_friend(users_graph, friend_id):
+
+  return users_graph.nodes[friend_id]['userinfo'].tags
+  
 def propagate_tags(users_graph):
 
+  users_graph_copy = copy.copy(users_graph)
   # https://stackoverflow.com/questions/21627457/looping-through-nodes-and-extract-attributes-in-networkx
   # First pass, the order matters, need to figure out when it shouldn't
   for user_id, user_attributes in users_graph.nodes(data=True):
     # e.x (873588304690, {'userinfo': <classes.UserInfo object at 0x000002BB4E0B2390>})
     # user_attributes is all the attributes assigned to the node
     userinfo_object = user_attributes['userinfo']
+    current_user_friends_tags = []
     for friend_id in userinfo_object.friends:
-      print(friend_id)
-      friend_userinfo_object = users_graph.nodes[friend_id]['userinfo']
-      if len(friend_userinfo_object.tags) > 0:
-        for tag in friend_userinfo_object.tags:
-          if tag not in userinfo_object.tags:
-            userinfo_object.tags.append(tag)
+      friend_tags = tags_from_friend(users_graph_copy, friend_id)
+      current_user_friends_tags.extend(friend_tags)
+    userinfo_object.tags = list(set(userinfo_object.tags + current_user_friends_tags))
   
   return users_graph
 
@@ -329,7 +333,7 @@ if __name__ == '__main__':
     print(node_a['userinfo'])
   m = propagate_tags(m)
   for info, node_a in m.nodes(data=True):
-    print(node_a['userinfo'])
+    print(info, node_a['userinfo'].tags)
   # m = assign_top_level_categories(m, TOP_100_ACCOUNTS_BY_FOLLOWERS)
   # y = nx.get_node_attributes(m, 'userinfo')
   # for k,v in y.items():
