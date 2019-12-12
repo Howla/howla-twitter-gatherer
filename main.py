@@ -25,43 +25,6 @@ auth = tweepy.OAuthHandler(credentials['consumer_key'], credentials['consumer_se
 auth.set_access_token(credentials['access_token'], credentials['access_token_secret'])
 api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True)
 
-fake = Faker()
-
-TOP_LEVEL_CATEGORIES = [
-  'sports',
-  # 'entertainment',
-  # 'media',
-  # 'food',
-  # 'politics',
-  # 'technology',
-  # 'religion',
-  # 'culture',
-  # 'science'
-]
-
-TOP_ACCOUNTS_BY_CATEGORIES = {
-  'sports': ['cristiano', 'nba', 'nfl', 'mlb', 'premierleague', 'nhl', 'kingjames', 'AaronRodgers12', 'MikeTrout', 'RafaelNadal'],
-  # 'entertainment': ['katyperry', 'taylorswift13', 'BTS_twt', 'theellenshow', 'RobertDowneyJr', 'ladygaga', 'LeoDiCaprio', 'Marvel', 'justinbieber', 'Disney'],
-  # 'media': ['cnnbrk', 'FoxNews', 'MSNBC', 'AJEnglish', 'BBCWorld', 'Reuters', 'AP', 'twitter', 'youtube', 'instagram'],
-  # 'food': ['McDonalds', 'CocaCola', 'Wendys', 'Starbucks', 'SUBWAY', 'ChipotleTweets', 'pizzahut', 'dunkindonuts', 'BurgerKing'],
-  # 'politics': ['barackobama', 'realdonaldtrump', 'narendramodi', 'sensanders', 'hillaryclinton', 'BorisJohnson', 'JustinTrudeau', 'AbeShinzo', 'EmmanuelMacron'],
-  # 'technology': ['apple', 'microsoft', 'google', 'amazon', 'elonmusk', 'billgates', 'tim_cook', 'spacex', 'gmail', 'firefox'],
-  # 'religion': ['Pontifex', 'JoelOsteen', 'JoyceMeyer'],
-  # 'culture': ['jk_rowling', 'stephenking', 'goodreads', 'MuseumModernArt', 'smithsonian', 'metmuseum', 'GRRMspeaking'],
-  # 'science': ['nasa', 'neiltyson', 'billnye', 'richarddawkins', 'profbriancox', 'natogeo', 'WHO', 'CERN', 'ScienceNews', 'NSF']
-} 
-
-# For testing purposes
-
-TEST_MODE_ACTIVE = True
-
-TEST_ACCOUNTS_FOR_CLASIFICATION = [
-  ('ohitsdoh', ['politics']),
-  ('_spe', ['technology']),
-  ('_pxlu', ['sports']),
-  ('suzannerivecca', ['media'])
-]
-
 #endregion
 
 def main():
