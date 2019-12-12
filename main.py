@@ -249,10 +249,6 @@ def assign_top_level_categories(users_graph, top_level_userinfo_objects):
 
 #region Part 3: Categorization & Propagation
 
-def tags_from_friend(users_graph, friend_id):
-
-  return users_graph.nodes[friend_id]['userinfo'].tags
-  
 def propagate_tags(users_graph):
 
   users_graph_copy = copy.copy(users_graph)
@@ -299,6 +295,10 @@ def categorize_node(user_graph_node):
 #endregion
 
 #region Helpers
+
+def tags_from_friend(users_graph, friend_id):
+
+  return users_graph.nodes[friend_id]['userinfo'].tags
 
 def get_breakdown_by_category(reference_accounts):
 
